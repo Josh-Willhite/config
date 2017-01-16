@@ -1,0 +1,110 @@
+---
+- hosts: all
+  remote_user: ubuntu
+  gather_facts: false
+  vars:
+    user_name: josh
+    uuid: 3333
+
+  pre_tasks:
+  - name: install python
+    raw: sudo apt-get install -qq python-simplejson
+    become: true
+
+  tasks:
+  - include_vars: secrets.yml
+
+#  - name: install debs
+#    apt:
+#      name: "{{ item }}"
+#      state: installed
+#      update_cache: yes
+#    with_items:
+#    - zsh
+#    - python-pip
+#    - python-dev
+#    - libssl-dev
+#    - libffi-dev
+#    become: true
+#
+#  - name: create user
+#    user:
+#      name: "{{ user_name }}"
+#      group: "admin"
+#      password: "{{ passhash }}"
+#      shell: /bin/zsh
+#      createhome: yes
+#      uid: "{{ uuid }}"
+#    become: true
+#
+#  - name: add key
+#    authorized_key:
+#      user: "{{ user_name }}"
+#      key: "{{ public_ssh_key }}"
+#    become: true
+#
+#  - name: copy requirements
+#    copy:
+#      src: requirements.txt
+#      dest: "/home/{{ user_name }}/requirements.txt"
+#      owner: "{{ user_name  }}"
+#      group: admin
+#      mode: 0644
+#    become: true
+#    become_user: "{{ user_name }}"
+#
+  - name: place private ssh key
+    copy:
+      content: "{{ private_ssh_key }}"
+      dest: "/home/{{ user_name }}/.ssh/id_rsa"
+      owner: "{{ user_name  }}"
+      group: admin
+      mode: 0600
+    become: true
+    become_user: "{{ user_name }}"
+
+#  - name: install python modules
+#    pip:
+#      requirements: "/home/{{ user_name }}/requirements.txt"
+#    tags:
+#      - python_reqs
+#    become: true
+
+#  - name: sudo without password
+#    copy:
+#      src: sudoers
+#      dest: /etc/sudoers
+#      owner: root
+#      group: root
+#      mode: 0440
+#    tags:
+#      - sudoers
+#    become: true
+
+  - name: clone dotfile repo
+    git:
+      repo: https://git@github.com/josh-willhite/dotfiles.git
+      dest: /home/{{ user_name }}/dotfiles
+      accept_hostkey: true
+    become: true
+    become_user: "{{ user_name }}"
+
+  - name: link dot files
+    file:
+      src: /home/{{ user_name }}/dotfiles/{{ item }}
+      dest: /home/{{ user_name }}/.{{ item }}
+      state: link
+    with_items:
+      - zshrc
+      - vim
+      - tmux.conf
+    become: true
+    become_user: "{{ user_name }}"
+
+  - name: link ipython config
+    file:
+      src: /home/{{ user_name }}/dotfiles/ipython/ipython_config.py
+      dest: /home/{{ user_name }}/.ipython/profile_default/ipython_config.py
+      state: link
+    become: true
+    become_user: "{{ user_name }}"
