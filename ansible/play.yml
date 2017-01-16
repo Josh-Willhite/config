@@ -101,6 +101,14 @@
     become: true
     become_user: "{{ user_name }}"
 
+  - name: create default ipython user dir
+    file:
+      path: /home/{{ user_name }}/.ipython/profile_default
+      state: directory
+      mode: 0755
+    become: true
+    become_user: "{{ user_name }}"
+
   - name: link ipython config
     file:
       src: /home/{{ user_name }}/dotfiles/ipython/ipython_config.py
